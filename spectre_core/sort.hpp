@@ -16,25 +16,38 @@ void sort(std::vector<T>& collection, COMPARATOR comparator)
 template <typename T, typename COMPARATOR>
 void sort(std::vector<T>& collection, COMPARATOR comparator, int lo, int hi)
 {
-    // cutoff to insertion sort
-    int n = hi - lo + 1;
-
-    if (n <= CUTOFF)
+    while (lo < hi)
     {
-        insertionSort(collection, comparator, lo, hi);
+        // cutoff to insertion sort
+        int n = hi - lo + 1;
 
-        return;
+        if (n <= CUTOFF)
+        {
+            insertionSort(collection, comparator, lo, hi);
+
+            return;
+        }
+
+        // finding of median-of-three 
+        int m = median3(collection, comparator, lo, lo + n / 2, hi);
+
+        exch(collection, m, lo);
+
+        int j = partition(collection, comparator, lo, hi);
+
+        // If left part is smaller, then recur for left part 
+        // and handle right part iteratively 
+        if (j - lo < hi - j)
+        {
+            sort(collection, comparator, lo, j - 1);
+            lo = j + 1;
+        } // Else recur for right part 
+        else
+        {
+            sort(collection, comparator, j + 1, hi);
+            hi = j - 1;
+        }
     }
-
-    // finding of median-of-three 
-    int m = median3(collection, comparator, lo, lo + n / 2, hi);
-
-    exch(collection, m, lo);
-
-    int j = partition(collection, comparator, lo, hi);
-
-    sort(collection, comparator, lo, j - 1);
-    sort(collection, comparator, j + 1, hi);
 
     assert(isSorted(collection, comparator, lo, hi));
 }
@@ -49,6 +62,8 @@ void insertionSort(std::vector<T>& collection, COMPARATOR comparator, int lo, in
             exch(collection, j, j - 1);
         }
     }
+
+    assert(isSorted(collection, comparator, lo, hi));
 }
 
 // return the index of the median element among collection[i], collection[j], and collection[k]
