@@ -2,26 +2,34 @@
 
 #include "spectre.h"
 
-#include <algorithm>
-#include <random>
+#define CUTOFF 14
 
 
 template <typename T, typename COMPARATOR>
 void sort(std::vector<T>& collection, COMPARATOR comparator)
 {
-    auto rng = std::default_random_engine{};
-    std::shuffle(std::begin(collection), std::end(collection), rng);
-
     sort(collection, comparator, 0, collection.size() - 1);
 
     assert(isSorted(collection, comparator));
 }
 
-// quicksort the subarray from collection[lo] to collection[hi]
 template <typename T, typename COMPARATOR>
 void sort(std::vector<T>& collection, COMPARATOR comparator, int lo, int hi)
 {
-    if (hi <= lo) return;
+    // cutoff to insertion sort
+    int n = hi - lo + 1;
+
+    if (n <= CUTOFF)
+    {
+        insertionSort(collection, comparator, lo, hi);
+
+        return;
+    }
+
+    // finding of median-of-three 
+    int m = median3(collection, comparator, lo, lo + n / 2, hi);
+
+    exch(collection, m, lo);
 
     int j = partition(collection, comparator, lo, hi);
 
@@ -29,6 +37,27 @@ void sort(std::vector<T>& collection, COMPARATOR comparator, int lo, int hi)
     sort(collection, comparator, j + 1, hi);
 
     assert(isSorted(collection, comparator, lo, hi));
+}
+
+template <typename T, typename COMPARATOR>
+void insertionSort(std::vector<T>& collection, COMPARATOR comparator, int lo, int hi)
+{
+    for (int i = lo; i <= hi; i++)
+    {
+        for (int j = i; j > lo && comparator(collection[j], collection[j - 1]); j--)
+        {
+            exch(collection, j, j - 1);
+        }
+    }
+}
+
+// return the index of the median element among collection[i], collection[j], and collection[k]
+template <typename T, typename COMPARATOR>
+int median3(std::vector<T>& collection, COMPARATOR comparator, int i, int j, int k)
+{
+    return (comparator(collection[i], collection[j])
+                ? (comparator(collection[j], collection[k]) ? j : comparator(collection[i], collection[k]) ? k : i)
+                : (comparator(collection[k], collection[j]) ? j : comparator(collection[k], collection[i]) ? k : i));
 }
 
 template <typename T, typename COMPARATOR>
@@ -84,6 +113,12 @@ template <typename T, typename COMPARATOR>
 bool isSorted(std::vector<T>& collection, COMPARATOR comparator, int lo, int hi)
 {
     for (int i = lo + 1; i <= hi; i++)
-        if (comparator(collection[i], collection[i - 1])) return false;
+    {
+        if (comparator(collection[i], collection[i - 1]))
+        {
+            return false;
+        }
+    }
+
     return true;
 }
