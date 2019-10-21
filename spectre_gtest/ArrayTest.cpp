@@ -137,3 +137,61 @@ TEST(ArrayTest, InsertingElementWithBiggerThanSizeIndexThrowExceptionTest)
     EXPECT_THROW(array.insert(2, 1), std::out_of_range);
 }
 
+TEST(ArrayTest, IteratorForwardMovingTest)
+{
+    Array<int> array;
+    auto iterator = array.iterator();
+
+    iterator.insert(0);
+    iterator.insert(1);
+    iterator.insert(2);
+    iterator.insert(3);
+
+    for (int i = 3; iterator.hasNext(); iterator.next(), i--)
+    {
+        EXPECT_EQ(iterator.get(), i);
+    }
+}
+
+TEST(ArrayTest, IteratorBackwardMovingTest)
+{
+    Array<int> array;
+    auto iterator = array.iterator();
+
+    iterator.insert(0);
+    iterator.insert(1);
+    iterator.insert(2);
+    iterator.insert(3);
+
+    iterator.toIndex(3);
+
+    for (int i = 0; iterator.hasPrev(); iterator.prev(), i++)
+    {
+        EXPECT_EQ(iterator.get(), i);
+    }
+}
+
+TEST(ArrayTest, IteratorSettingAndRemovingTest)
+{
+    Array<int> array;
+    auto iterator = array.iterator();
+
+    array.insert(1);
+    array.insert(1);
+    array.insert(3);
+    array.insert(10);
+    array.insert(4);
+
+    iterator.toIndex(3);
+    iterator.remove();
+
+    iterator.toIndex(1);
+    iterator.set(2);
+
+    iterator.toIndex(0);
+
+    for (int i = 1; iterator.hasNext(); iterator.next(), i++)
+    {
+        EXPECT_EQ(iterator.get(), i);
+    }
+}

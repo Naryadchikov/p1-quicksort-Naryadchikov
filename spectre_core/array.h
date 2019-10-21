@@ -32,6 +32,40 @@ public:
 
     int getSize() const;
 
+    class Iterator
+    {
+    public:
+
+        Iterator(Array<T>& arr);
+
+        const T& get() const;
+
+        void set(const T& value);
+
+        void insert(const T& value);
+
+        void remove();
+
+        void next();
+
+        void prev();
+
+        void toIndex(int index);
+
+        bool hasNext() const;
+
+        bool hasPrev() const;
+
+    private:
+        int index;
+
+        Array<T>& arr;
+    };
+
+    Iterator iterator();
+
+    const Iterator iterator() const;
+
 private:
 
     T* array;

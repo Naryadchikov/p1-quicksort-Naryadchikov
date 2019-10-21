@@ -155,6 +155,81 @@ int Array<T>::getSize() const
 }
 
 template <typename T>
+Array<T>::Iterator::Iterator(Array<T>& arr) : index(0), arr(arr)
+{
+}
+
+template <typename T>
+const T& Array<T>::Iterator::get() const
+{
+    return arr[index];
+}
+
+template <typename T>
+void Array<T>::Iterator::set(const T& value)
+{
+    arr[index] = value;
+}
+
+template <typename T>
+void Array<T>::Iterator::insert(const T& value)
+{
+    arr.insert(index, value);
+}
+
+template <typename T>
+void Array<T>::Iterator::remove()
+{
+    arr.remove(index);
+}
+
+template <typename T>
+void Array<T>::Iterator::next()
+{
+    index++;
+}
+
+template <typename T>
+void Array<T>::Iterator::prev()
+{
+    index--;
+}
+
+template <typename T>
+void Array<T>::Iterator::toIndex(int index)
+{
+    this->index = index;
+}
+
+template <typename T>
+bool Array<T>::Iterator::hasNext() const
+{
+    return index < arr.getSize() - 1;
+}
+
+template <typename T>
+bool Array<T>::Iterator::hasPrev() const
+{
+    return index > 0;
+}
+
+template <typename T>
+typename Array<T>::Iterator Array<T>::iterator()
+{
+    Iterator iterator(*this);
+
+    return iterator;
+}
+
+template <typename T>
+const typename Array<T>::Iterator Array<T>::iterator() const
+{
+    Iterator iterator(*this);
+
+    return iterator;
+}
+
+template <typename T>
 void Array<T>::resize(int newCapacity)
 {
     Array tmp(newCapacity);
