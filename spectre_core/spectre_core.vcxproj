@@ -151,6 +151,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="array.h" />
+    <ClInclude Include="array.hpp" />
     <ClInclude Include="sort.hpp" />
     <ClInclude Include="spectre.h" />
     <ClInclude Include="pch.h" />
