@@ -24,6 +24,12 @@
     <ClInclude Include="sort.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="LLRBTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LLRBTree.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
