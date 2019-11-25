@@ -6,7 +6,7 @@ class LLRBTree final
 {
 public:
 
-    V search(const K& key);
+    V* search(const K& key);
 
     void insert(const K& key, const V& value);
 

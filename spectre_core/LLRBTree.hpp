@@ -10,7 +10,7 @@ LLRBTree<K, V>::Node::Node(const K& key, const V& val)
 }
 
 template <typename K, typename V>
-V LLRBTree<K, V>::search(const K& key)
+V* LLRBTree<K, V>::search(const K& key)
 {
     Node* x = root;
 
@@ -18,7 +18,7 @@ V LLRBTree<K, V>::search(const K& key)
     {
         if (key == x->key) 
         {
-            return x->val;
+            return &(x->val);
         }
         else if (key < x->key)
         {
@@ -30,7 +30,7 @@ V LLRBTree<K, V>::search(const K& key)
         }
     }
 
-    return V();
+    return nullptr;
 }
 
 template <typename K, typename V>

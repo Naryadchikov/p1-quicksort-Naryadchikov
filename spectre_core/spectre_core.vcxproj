@@ -151,6 +151,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Dictionary.h" />
+    <ClInclude Include="Dictionary.hpp" />
     <ClInclude Include="LLRBTree.h" />
     <ClInclude Include="LLRBTree.hpp" />
     <ClInclude Include="sort.hpp" />
