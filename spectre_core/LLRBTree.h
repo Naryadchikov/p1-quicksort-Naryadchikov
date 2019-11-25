@@ -4,6 +4,8 @@
 template <typename K, typename V>
 class LLRBTree final
 {
+    template <typename, typename>
+    friend class Dictionary;
 public:
 
     V* search(const K& key);
@@ -28,6 +30,8 @@ private:
         Node* left = nullptr;
 
         Node* right = nullptr;
+
+        Node* parent = nullptr;
 
         bool color;
 

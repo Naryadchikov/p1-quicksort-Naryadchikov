@@ -61,11 +61,17 @@ typename LLRBTree<K, V>::Node* LLRBTree<K, V>::insert(Node* h, const K& key, con
     }
     else if (key < h->key)
     {
-        h->left = insert(h->left, key, value);
+        Node* newNode = insert(h->left, key, value);
+
+        newNode->parent = h;
+        h->left = newNode;
     }
     else
     {
-        h->right = insert(h->right, key, value);
+        Node* newNode = insert(h->right, key, value);
+
+        newNode->parent = h;
+        h->right = newNode;
     }
 
     h = fixUp(h);
@@ -80,6 +86,14 @@ typename LLRBTree<K, V>::Node* LLRBTree<K, V>::rotateLeft(Node* h)
 
     h->right = x->left;
     x->left = h;
+
+    if (h->right != nullptr)
+    {
+        h->right->parent = h;
+    }
+    x->parent = h->parent;
+    h->parent = x;
+
     x->color = h->color;
     h->color = RED;
 
@@ -93,6 +107,14 @@ typename LLRBTree<K, V>::Node* LLRBTree<K, V>::rotateRight(Node* h)
 
     h->left = x->right;
     x->right = h;
+
+    if (h->left != nullptr)
+    {
+        h->left->parent = h;
+    }
+    x->parent = h->parent;
+    h->parent = x;
+
     x->color = h->color;
     h->color = RED;
 

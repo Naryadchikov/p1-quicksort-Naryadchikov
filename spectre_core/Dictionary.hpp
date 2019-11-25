@@ -65,3 +65,95 @@ int Dictionary<K, V>::getSize() const
 {
     return size;
 }
+
+template <typename K, typename V>
+const K& Dictionary<K, V>::Iterator::key() const
+{
+    return currentNode->key;
+}
+
+template <typename K, typename V>
+const V& Dictionary<K, V>::Iterator::get() const
+{
+    return currentNode->val;
+}
+
+template <typename K, typename V>
+void Dictionary<K, V>::Iterator::set(const V& value)
+{
+    currentNode->val = value;
+}
+
+template <typename K, typename V>
+void Dictionary<K, V>::Iterator::next()
+{
+    if (shouldGoDown)
+    {
+        if (currentNode->left != nullptr)
+        {
+            currentNode = currentNode->left;
+        }
+        else
+        {
+            shouldGoDown = false;
+        }
+    }
+
+    if (!shouldGoDown)
+    {
+        while (true)
+        {
+            typename LLRBTree<K, V>::Node* tmp = currentNode;
+
+            if (currentNode == iteratorRoot)
+            {
+                break;
+            }
+
+            currentNode = currentNode->parent;
+
+            if (currentNode->right != nullptr && currentNode->right != tmp)
+            {
+                break;
+            }
+        }
+
+        if (currentNode == iteratorRoot)
+        {
+            iteratorRoot = currentNode->right;
+        }
+
+        currentNode = currentNode->right;
+
+        shouldGoDown = true;
+    }
+}
+
+template <typename K, typename V>
+void Dictionary<K, V>::Iterator::prev()
+{
+}
+
+template <typename K, typename V>
+bool Dictionary<K, V>::Iterator::hasNext() const
+{
+    return iteratorRoot != nullptr;
+}
+
+template <typename K, typename V>
+bool Dictionary<K, V>::Iterator::hasPrev() const
+{
+    return false;
+}
+
+template <typename K, typename V>
+typename Dictionary<K, V>::Iterator Dictionary<K, V>::iterator()
+{
+    return *(new Iterator(this->llrbTree));
+}
+
+template <typename K, typename V>
+const typename Dictionary<K, V>::Iterator Dictionary<K, V>::iterator() const
+{
+    return *(new Iterator(this->llrbTree));
+}
