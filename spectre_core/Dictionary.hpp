@@ -67,6 +67,27 @@ int Dictionary<K, V>::getSize() const
 }
 
 template <typename K, typename V>
+Dictionary<K, V>::Iterator::Iterator(LLRBTree<K, V>& llrbTreeRef) : llrbTreeRef(llrbTreeRef)
+{
+    currentNode = llrbTreeRef.root;
+    iteratorRoot = llrbTreeRef.root;
+
+    lastNode = currentNode;
+
+    while (lastNode->right != nullptr)
+    {
+        lastNode = lastNode->right;
+    }
+
+    if (lastNode->left != nullptr)
+    {
+        lastNode = lastNode->left;
+    }
+
+    shouldGoDown = true;
+}
+
+template <typename K, typename V>
 const K& Dictionary<K, V>::Iterator::key() const
 {
     return currentNode->key;
@@ -132,18 +153,38 @@ void Dictionary<K, V>::Iterator::next()
 template <typename K, typename V>
 void Dictionary<K, V>::Iterator::prev()
 {
+    if (currentNode == currentNode->parent->left)
+    {
+        currentNode = currentNode->parent;
+    }
+    else
+    {
+        if (currentNode->parent->left == nullptr)
+        {
+            currentNode = currentNode->parent;
+        }
+        else
+        {
+            currentNode = currentNode->parent->left;
+
+            while (currentNode->right != nullptr)
+            {
+                currentNode = currentNode->right;
+            }
+        }
+    }
 }
 
 template <typename K, typename V>
 bool Dictionary<K, V>::Iterator::hasNext() const
 {
-    return iteratorRoot != nullptr;
+    return currentNode != lastNode;
 }
 
 template <typename K, typename V>
 bool Dictionary<K, V>::Iterator::hasPrev() const
 {
-    return false;
+    return currentNode != llrbTreeRef.root;
 }
 
 template <typename K, typename V>

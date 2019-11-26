@@ -28,12 +28,7 @@ public:
     {
     public:
 
-        Iterator(LLRBTree<K, V>& llrbTreeRef) : llrbTreeRef(llrbTreeRef)
-        {
-            currentNode = llrbTreeRef.root;
-            iteratorRoot = llrbTreeRef.root;
-            shouldGoDown = true;
-        }
+        Iterator(LLRBTree<K, V>& llrbTreeRef);
 
         const K& key() const;
 
@@ -56,6 +51,8 @@ public:
         typename LLRBTree<K, V>::Node* currentNode;
 
         typename LLRBTree<K, V>::Node* iteratorRoot;
+
+        typename LLRBTree<K, V>::Node* lastNode;
 
         bool shouldGoDown;
     };
