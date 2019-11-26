@@ -22,8 +22,11 @@ void Dictionary<K, V>::put(const K& key, const V& value)
 template <typename K, typename V>
 void Dictionary<K, V>::remove(const K& key)
 {
-    llrbTree.remove(key);
-    --size;
+    if (contains(key))
+    {
+        llrbTree.remove(key);
+        --size;
+    }
 }
 
 template <typename K, typename V>
@@ -42,7 +45,7 @@ const V& Dictionary<K, V>::operator[](const K& key) const
         return *elementPtr;
     }
 
-    return V();
+    return *new V();
 }
 
 template <typename K, typename V>
@@ -55,9 +58,11 @@ V& Dictionary<K, V>::operator[](const K& key)
         return *elementPtr;
     }
 
-    llrbTree.insert(key, V());
+    V& defaultValueToBeInserted = *new V();
 
-    return V();
+    llrbTree.insert(key, defaultValueToBeInserted);
+
+    return defaultValueToBeInserted;
 }
 
 template <typename K, typename V>

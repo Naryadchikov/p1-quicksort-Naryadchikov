@@ -44,7 +44,11 @@ template <typename K, typename V>
 void LLRBTree<K, V>::remove(const K& key)
 {
     root = remove(root, key);
-    root->color = BLACK;
+
+    if (root != nullptr)
+    {
+        root->color = BLACK;
+    }
 }
 
 template <typename K, typename V>
