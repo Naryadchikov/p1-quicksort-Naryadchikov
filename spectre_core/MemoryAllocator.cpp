@@ -21,6 +21,9 @@ MemoryAllocator::MemoryAllocator()
         fsaHeap2[i] = std::vector<FSA>();
         fsaHeap2[i].push_back(FSA{big_page_size / i, big_page_size / i, i, 0, nullptr});
     }
+
+    coalesceHeap1.push_back(new FreeListAllocator(alloc_commit_size_coalesce_1));
+    coalesceHeap2.push_back(new FreeListAllocator(alloc_commit_size_coalesce_2));
 }
 
 MemoryAllocator::~MemoryAllocator()
@@ -51,6 +54,14 @@ void MemoryAllocator::init()
 
         memInUse += big_page_size;
     }
+
+    coalesceHeap1[0]->init(VirtualAlloc(((char*)ptrToReserved) + memInUse, alloc_commit_size_coalesce_1, MEM_COMMIT,
+                                        PAGE_READWRITE));
+    memInUse += alloc_commit_size_coalesce_1;
+
+    coalesceHeap2[0]->init(VirtualAlloc(((char*)ptrToReserved) + memInUse, alloc_commit_size_coalesce_2, MEM_COMMIT,
+                                        PAGE_READWRITE));
+    memInUse += alloc_commit_size_coalesce_2;
 }
 
 void MemoryAllocator::destroy()
@@ -69,6 +80,11 @@ void MemoryAllocator::destroy()
 
 void* MemoryAllocator::alloc(size_t size)
 {
+    if (size == 0)
+    {
+        return nullptr;
+    }
+
     // Allocate in FSA
     if (size <= edge_size_for_fsa)
     {
@@ -87,6 +103,11 @@ void* MemoryAllocator::alloc(size_t size)
         // creating new FSA with 32Kb page
         if (alignedSize > 32)
         {
+            if (memInUse + big_page_size > alloc_reservation_size)
+            {
+                return nullptr;
+            }
+
             pages32.push_back(
                 VirtualAlloc(((char*)ptrToReserved) + memInUse, big_page_size, MEM_COMMIT, PAGE_READWRITE));
 
@@ -101,6 +122,11 @@ void* MemoryAllocator::alloc(size_t size)
         }
 
         // creating new FSA with 4Kb page
+        if (memInUse + small_page_size > alloc_reservation_size)
+        {
+            return nullptr;
+        }
+
         pages4.push_back(
             VirtualAlloc(((char*)ptrToReserved) + memInUse, small_page_size, MEM_COMMIT, PAGE_READWRITE));
 
@@ -117,16 +143,77 @@ void* MemoryAllocator::alloc(size_t size)
     // Allocate in First Coalesce Heap
     if (size <= edge_size_for_first_coalesce_heap)
     {
-        return nullptr; // TODO: Implement Coalesce Heap
+        void* p = nullptr;
+        int i = 0;
+
+        while (p == nullptr && i < ((int)coalesceHeap1.size()))
+        {
+            p = coalesceHeap1[i]->allocate(size);
+            ++i;
+        }
+
+        if (p != nullptr)
+        {
+            return p;
+        }
+
+        // creating new FreeListAllocator
+        if (memInUse + alloc_commit_size_coalesce_1 > alloc_reservation_size)
+        {
+            return nullptr;
+        }
+
+        coalesceHeap1.push_back(new FreeListAllocator(alloc_commit_size_coalesce_1));
+
+        coalesceHeap1[coalesceHeap1.size() - 1]->init(VirtualAlloc(((char*)ptrToReserved) + memInUse,
+                                                                   alloc_commit_size_coalesce_1, MEM_COMMIT,
+                                                                   PAGE_READWRITE));
+
+        memInUse += alloc_commit_size_coalesce_1;
+
+        return coalesceHeap1[coalesceHeap1.size() - 1]->allocate(size);
     }
 
     // Allocate in Second Coalesce Heap
     if (size < edge_size_for_coalesce_heap)
     {
-        return nullptr; // TODO: Implement Coalesce Heap
+        void* p = nullptr;
+        int i = 0;
+
+        while (p == nullptr && i < ((int)coalesceHeap2.size()))
+        {
+            p = coalesceHeap2[i]->allocate(size);
+            ++i;
+        }
+
+        if (p != nullptr)
+        {
+            return p;
+        }
+
+        // creating new FreeListAllocator
+        if (memInUse + alloc_commit_size_coalesce_2 > alloc_reservation_size)
+        {
+            return nullptr;
+        }
+
+        coalesceHeap2.push_back(new FreeListAllocator(alloc_commit_size_coalesce_2));
+
+        coalesceHeap2[coalesceHeap2.size() - 1]->init(VirtualAlloc(((char*)ptrToReserved) + memInUse,
+                                                                   alloc_commit_size_coalesce_2, MEM_COMMIT,
+                                                                   PAGE_READWRITE));
+
+        memInUse += alloc_commit_size_coalesce_2;
+
+        return coalesceHeap2[coalesceHeap2.size() - 1]->allocate(size);
     }
 
     // Allocate in Large Heap if 10+ Mb are asked for allocation
+    if (memInUse + size > alloc_reservation_size)
+    {
+        return nullptr;
+    }
+
     void* p = VirtualAlloc(NULL, size, MEM_COMMIT, PAGE_READWRITE);
 
     largeHeap.push_back(p);
@@ -156,7 +243,27 @@ void MemoryAllocator::free(void* p)
         return;
     }
 
-    // TODO: Free for Coalesce Heap
+    // Free for Coalesce Heap 1
+    for (auto allocator : coalesceHeap1)
+    {
+        if (allocator->isInRange(p))
+        {
+            allocator->free(p);
+
+            return;
+        }
+    }
+
+    // Free for Coalesce Heap 2
+    for (auto allocator : coalesceHeap2)
+    {
+        if (allocator->isInRange(p))
+        {
+            allocator->free(p);
+
+            return;
+        }
+    }
 
     // Free for Large Heap
     if (std::find(largeHeap.begin(), largeHeap.end(), p) != largeHeap.end())

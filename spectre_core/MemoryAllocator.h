@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "FreeListAllocator.h"
+
 class MemoryAllocator
 {
 private:
@@ -23,6 +25,8 @@ private:
     int memInUse;
 
     const static int alloc_reservation_size = 100 * 1024 * 1024;
+    const static int alloc_commit_size_coalesce_1 = 1 * 1024 * 1024;
+    const static int alloc_commit_size_coalesce_2 = 10 * 1024 * 1024;
 
     const static int edge_size_for_fsa = 512;
     const static int edge_size_for_first_coalesce_heap = 10 * 1024;
@@ -33,6 +37,9 @@ private:
 
     std::vector<void*> pages4;
     std::vector<void*> pages32;
+
+    std::vector<FreeListAllocator*> coalesceHeap1;
+    std::vector<FreeListAllocator*> coalesceHeap2;
 
     std::vector<void*> largeHeap;
 

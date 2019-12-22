@@ -151,12 +151,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="FreeListAllocator.h" />
     <ClInclude Include="MemoryAllocator.h" />
+    <ClInclude Include="SinglyLinkedList.h" />
+    <ClInclude Include="SinglyLinkedList.hpp" />
     <ClInclude Include="sort.hpp" />
     <ClInclude Include="spectre.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="FreeListAllocator.cpp" />
     <ClCompile Include="MemoryAllocator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
