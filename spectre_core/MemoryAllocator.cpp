@@ -1,5 +1,6 @@
 #include "pch.h"
 
+#include <iostream>
 #include<windows.h>
 
 #include "MemoryAllocator.h"
@@ -10,16 +11,14 @@ MemoryAllocator::MemoryAllocator()
     ptrToReserved = nullptr;
     memInUse = 0;
 
-    for (int i = 8; i <= 32; i *= 2)
+    for (int i = 0, j = 8; i < 3; i++, j *= 2)
     {
-        fsaHeap1[i] = std::vector<FSA>();
-        fsaHeap1[i].push_back(FSA{small_page_size / i, small_page_size / i, i, 0, nullptr});
+        fsaHeap[i] = FSA{ small_page_size / j, small_page_size / j, j, 0, nullptr, nullptr };
     }
 
-    for (int i = 64; i <= 512; i *= 2)
+    for (int i = 3, j = 64; i < 7; i++, j *= 2)
     {
-        fsaHeap2[i] = std::vector<FSA>();
-        fsaHeap2[i].push_back(FSA{big_page_size / i, big_page_size / i, i, 0, nullptr});
+        fsaHeap[i] = FSA{ big_page_size / j, big_page_size / j, j, 0, nullptr, nullptr };
     }
 
     coalesceHeap1.push_back(new FreeListAllocator(alloc_commit_size_coalesce_1));
@@ -37,20 +36,20 @@ void MemoryAllocator::init()
     ptrToReserved = VirtualAlloc(NULL, alloc_reservation_size, MEM_RESERVE, PAGE_READWRITE);
 
     // Commit first pages
-    for (int i = 0, j = 8; i < 3; i++, j *= 2)
+    for (int i = 0; i < 3; i++)
     {
-        pages4.push_back(VirtualAlloc(((char*)ptrToReserved) + memInUse, small_page_size, MEM_COMMIT, PAGE_READWRITE));
+        VirtualAlloc(((char*)ptrToReserved) + memInUse, small_page_size, MEM_COMMIT, PAGE_READWRITE);
 
-        fsaHeap1[j][0].base = ((char*)ptrToReserved) + memInUse;
+        fsaHeap[i].base = ((char*)ptrToReserved) + memInUse;
 
         memInUse += small_page_size;
     }
 
-    for (int i = 0, j = 64; i < 4; i++, j *= 2)
+    for (int i = 3; i < 7; i++)
     {
-        pages32.push_back(VirtualAlloc(((char*)ptrToReserved) + memInUse, big_page_size, MEM_COMMIT, PAGE_READWRITE));
+        VirtualAlloc(((char*)ptrToReserved) + memInUse, big_page_size, MEM_COMMIT, PAGE_READWRITE);
 
-        fsaHeap2[j][0].base = ((char*)ptrToReserved) + memInUse;
+        fsaHeap[i].base = ((char*)ptrToReserved) + memInUse;
 
         memInUse += big_page_size;
     }
@@ -89,14 +88,17 @@ void* MemoryAllocator::alloc(size_t size)
     if (size <= edge_size_for_fsa)
     {
         int alignedSize = size <= 8 ? 8 : std::pow(2, std::ceil(std::log(size) / std::log(2)));
-        std::vector<FSA> listOfFSAToUse = alignedSize > 32 ? fsaHeap2[alignedSize] : fsaHeap1[alignedSize];
+        int fsaIndex = std::log2(alignedSize) - 3;
+        FSA& fsaToUse = fsaHeap[fsaIndex];
 
-        for (auto& fsaToUse : listOfFSAToUse)
+        while (fsaToUse.numBlocks == 0 && fsaToUse.nextFsa != nullptr)
         {
-            if (fsaToUse.numFreeBlocks > 0)
-            {
-                return alloc(fsaToUse);
-            }
+            fsaToUse = *fsaToUse.nextFsa;
+        }
+
+        if (fsaToUse.numFreeBlocks > 0)
+        {
+            return alloc(fsaToUse);
         }
 
         // If we did not find FSA with free space we create new one
@@ -108,17 +110,18 @@ void* MemoryAllocator::alloc(size_t size)
                 return nullptr;
             }
 
-            pages32.push_back(
-                VirtualAlloc(((char*)ptrToReserved) + memInUse, big_page_size, MEM_COMMIT, PAGE_READWRITE));
+            VirtualAlloc(((char*)ptrToReserved) + memInUse, big_page_size, MEM_COMMIT, PAGE_READWRITE);
 
-            fsaHeap2[alignedSize].push_back(FSA{
+            FSA newFsa = FSA{
                 big_page_size / alignedSize, big_page_size / alignedSize, alignedSize, 0,
-                ((char*)ptrToReserved) + memInUse
-            });
+                ((char*)ptrToReserved) + memInUse, nullptr
+            };
+
+            fsaToUse.nextFsa = &newFsa;
 
             memInUse += big_page_size;
 
-            return alloc(fsaHeap2[alignedSize].back());
+            return alloc(*fsaToUse.nextFsa);
         }
 
         // creating new FSA with 4Kb page
@@ -127,17 +130,18 @@ void* MemoryAllocator::alloc(size_t size)
             return nullptr;
         }
 
-        pages4.push_back(
-            VirtualAlloc(((char*)ptrToReserved) + memInUse, small_page_size, MEM_COMMIT, PAGE_READWRITE));
+        VirtualAlloc(((char*)ptrToReserved) + memInUse, small_page_size, MEM_COMMIT, PAGE_READWRITE);
 
-        fsaHeap1[alignedSize].push_back(FSA{
+        FSA newFsa = FSA{
             small_page_size / alignedSize, small_page_size / alignedSize, alignedSize, 0,
-            ((char*)ptrToReserved) + memInUse
-        });
+            ((char*)ptrToReserved) + memInUse, nullptr
+        };
+
+        fsaToUse.nextFsa = &newFsa;
 
         memInUse += small_page_size;
 
-        return alloc(fsaHeap1[alignedSize].back());
+        return alloc(*fsaToUse.nextFsa);
     }
 
     // Allocate in First Coalesce Heap
@@ -274,33 +278,23 @@ void MemoryAllocator::free(void* p)
 
 MemoryAllocator::FSA& MemoryAllocator::findFsaByAddress(void* p)
 {
-    // Searching in the first FSA Heap
-    for (auto& element : fsaHeap1)
+    for (FSA& firstFsa : fsaHeap)
     {
-        for (FSA& fsa : element.second)
+        FSA* fsaPtr = &firstFsa;
+
+        while (fsaPtr != nullptr)
         {
-            if ((uintptr_t)p >= (uintptr_t)fsa.base &&
-                (uintptr_t)p < (uintptr_t)fsa.base + (uintptr_t)small_page_size)
+            if ((int)p >= (int)(fsaPtr->base) &&
+                (int)p < (int)(fsaPtr->base) + (int)big_page_size)
             {
-                return fsa;
+                return *fsaPtr;
             }
+
+            fsaPtr = fsaPtr->nextFsa;
         }
     }
 
-    // Searching in the second FSA Heap
-    for (auto& element : fsaHeap2)
-    {
-        for (FSA& fsa : element.second)
-        {
-            if ((uintptr_t)p >= (uintptr_t)fsa.base &&
-                (uintptr_t)p < (uintptr_t)fsa.base + (uintptr_t)big_page_size)
-            {
-                return fsa;
-            }
-        }
-    }
-
-    FSA dummy = FSA{0, 0, 0, 0, nullptr};
+    FSA dummy = FSA{ 0, 0, 0, 0, nullptr, nullptr };
 
     return dummy;
 }

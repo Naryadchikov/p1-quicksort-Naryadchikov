@@ -1,6 +1,5 @@
 #pragma once
 
-#include <unordered_map>
 #include <vector>
 
 #include "FreeListAllocator.h"
@@ -16,10 +15,10 @@ private:
         int blockSize;
         int freeP;
         void* base;
+        FSA* nextFsa;
     };
 
-    std::unordered_map<int, std::vector<FSA>> fsaHeap1;
-    std::unordered_map<int, std::vector<FSA>> fsaHeap2;
+    FSA fsaHeap[7];
 
     void* ptrToReserved;
     int memInUse;
@@ -34,9 +33,6 @@ private:
 
     const static int small_page_size = 4 * 1024;
     const static int big_page_size = 32 * 1024;
-
-    std::vector<void*> pages4;
-    std::vector<void*> pages32;
 
     std::vector<FreeListAllocator*> coalesceHeap1;
     std::vector<FreeListAllocator*> coalesceHeap2;

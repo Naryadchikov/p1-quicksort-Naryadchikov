@@ -1,7 +1,5 @@
 #include "pch.h"
 
-#include <set>
-
 #include "spectre_core/MemoryAllocator.h"
 
 class MemoryAllocatorTest : public ::testing::Test
@@ -26,6 +24,8 @@ TEST_F(MemoryAllocatorTest, ZeroAllocation)
     void* p = allocator.alloc(0);
 
     ASSERT_EQ(p, nullptr);
+
+    ASSERT_NO_THROW(allocator.free(p));
 }
 
 TEST_F(MemoryAllocatorTest, SimpleIntAllocation)
@@ -34,6 +34,8 @@ TEST_F(MemoryAllocatorTest, SimpleIntAllocation)
 
     ASSERT_NE(pi, nullptr);
     ASSERT_EQ((uintptr_t)pi % 8, 0);
+
+    ASSERT_NO_THROW(allocator.free(pi));
 }
 
 TEST_F(MemoryAllocatorTest, SimpleArrayForFirstCoalesceHeapAllocation)
@@ -42,6 +44,8 @@ TEST_F(MemoryAllocatorTest, SimpleArrayForFirstCoalesceHeapAllocation)
 
     ASSERT_NE(pa, nullptr);
     ASSERT_EQ((uintptr_t)pa % 8, 0);
+
+    ASSERT_NO_THROW(allocator.free(pa));
 }
 
 TEST_F(MemoryAllocatorTest, SimpleArrayForSecondCoalesceHeapAllocation)
@@ -50,6 +54,8 @@ TEST_F(MemoryAllocatorTest, SimpleArrayForSecondCoalesceHeapAllocation)
 
     ASSERT_NE(pa, nullptr);
     ASSERT_EQ((uintptr_t)pa % 8, 0);
+
+    ASSERT_NO_THROW(allocator.free(pa));
 }
 
 TEST_F(MemoryAllocatorTest, SimpleAllocationForLargeHeap)
@@ -58,4 +64,6 @@ TEST_F(MemoryAllocatorTest, SimpleAllocationForLargeHeap)
 
     ASSERT_NE(pa, nullptr);
     ASSERT_EQ((uintptr_t)pa % 8, 0);
+
+    ASSERT_NO_THROW(allocator.free(pa));
 }
