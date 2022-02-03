@@ -1,3 +1,3 @@
+My assignments from "Algorithms in сomputer games сontext" course during 1st semester of master degree at ITMO University.
 
-# Нарядчиков Александр Владимирович
-C4122
+Each branch is the separate assignment.
